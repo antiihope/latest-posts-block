@@ -12,8 +12,15 @@ import {
 	TextControl,
 } from '@wordpress/components';
 export default function Edit( { attributes, setAttributes } ) {
-	const { numberOfPosts, displayFeaturedImage, order, orderBy } = attributes;
+	const {
+		numberOfPosts,
+		displayFeaturedImage,
+		order,
+		orderBy,
+		categories,
+	} = attributes;
 
+	const catIDs = categories && categories?.map( ( cat ) => cat.id );
 	const posts = useSelect(
 		( select ) => {
 			return select( 'core' ).getEntityRecords( 'postType', 'post', {
@@ -21,10 +28,26 @@ export default function Edit( { attributes, setAttributes } ) {
 				_embed: true,
 				order,
 				orderby: orderBy,
+				categories: catIDs,
+			} );
+		},
+		[ numberOfPosts, order, orderBy, categories ]
+	);
+
+	const allCategories = useSelect(
+		( select ) => {
+			return select( 'core' ).getEntityRecords( 'taxonomy', 'category', {
+				per_page: -1,
 			} );
 		},
 		[ numberOfPosts, order, orderBy ]
 	);
+	const catSuggestions = {};
+	if ( allCategories ) {
+		for ( let i = 0; i < allCategories.length; i++ ) {
+			catSuggestions[ allCategories[ i ].name ] = allCategories[ i ];
+		}
+	}
 
 	const onDisplayImageChange = ( value ) => {
 		setAttributes( { displayFeaturedImage: value } );
@@ -34,6 +57,16 @@ export default function Edit( { attributes, setAttributes } ) {
 		setAttributes( { numberOfPosts: value } );
 	};
 
+	const onCategoryChange = ( values ) => {
+		const hasNoSuggestions = values.some( ( value ) => {
+			return typeof value == 'string' && ! catSuggestions[ value ];
+		} );
+		if ( hasNoSuggestions ) return;
+		const updatedCats = values.map( ( token ) => {
+			return typeof token === 'string' ? catSuggestions[ token ] : token;
+		} );
+		setAttributes( { categories: updatedCats } );
+	};
 	return (
 		<>
 			<InspectorControls>
@@ -50,12 +83,15 @@ export default function Edit( { attributes, setAttributes } ) {
 						minItems={ 2 }
 						orderBy={ orderBy }
 						order={ order }
+						categorySuggestions={ catSuggestions }
+						selectedCategories={ categories }
 						onOrderByChange={ ( value ) => {
 							setAttributes( { orderBy: value } );
 						} }
 						onOrderChange={ ( value ) => {
 							setAttributes( { order: value } );
 						} }
+						onCategoryChange={ onCategoryChange }
 					/>
 				</PanelBody>
 			</InspectorControls>
