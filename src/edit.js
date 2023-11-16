@@ -4,8 +4,8 @@ import './editor.scss';
 
 export default function Edit() {
 	return (
-		<p {...useBlockProps()}>
-			{__('Boilerplate – hello from the editor!', 'boilerplate')}
+		<p { ...useBlockProps() }>
+			{ __( 'latest posts – hello from the editor!', 'latest-posts' ) }
 		</p>
 	);
 }
